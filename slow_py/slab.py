@@ -310,13 +310,14 @@ class Slab:
         points = [(lon, lat) for lon, lat in zip(longitudes[self.indices], latitudes[self.indices])]
 
         # Compute alpha shape (alpha ≈ resolution works well for structured grids)
-        alpha = dlon
-        hull = alphashape.alphashape(np.array(points))
-        print(hull.alpha)
+        alpha = dlat * 250
+        print(f'res: {dlat}, alpha: {alpha}')
+        hull = alphashape.alphashape(np.array(points), alpha=alpha)
         # Force the geometry to be a MultiPolygon if needed
         if isinstance(hull, (Polygon, MultiPolygon)):
             geom = hull
         elif hasattr(hull, "geoms"):
+            print(hull)
             polys = [g for g in hull.geoms if isinstance(g, (Polygon, MultiPolygon))]
             geom = MultiPolygon(polys) if len(polys) > 1 else polys[0]
         else:
@@ -327,11 +328,15 @@ class Slab:
         # Export to shapefile
         gdf.to_file(path)
 
-cam = Slab('cam', path='../data/Slab2/xyz')
-# cam.load_data('../data/Slab2/xyz')
-# cam.write_csv('../data/Slab2/csv/cam_slab2.csv')
-# cam.write_geotiff('../data/Slab2/geotiff/cam_slab2_depth.tif', attr='depth')
-cam.write_shp('../data/Slab2/shp/cam_slab2_depth.shp')
+
+for slab_name in ALL_SLABS:
+    print(slab_name)
+    if slab_name != 'ker':
+        continue
+    slab = Slab(slab_name, path='../data/Slab2/xyz')
+    slab.write_csv(f'../data/Slab2/csv/{slab_name}_slab2.csv')
+    # slab.write_geotiff(f'../data/Slab2/geotiff/{slab_name}_depth.tif', attr='depth', corr360=True)
+    slab.write_shp(f'../data/Slab2/shp/{slab_name}.shp', corr360=True)
 
 # def write_singleband_tiff(path, array, transform, dtype):
 #     array = array[::-1, :]  # Flip for north-up
