@@ -21,29 +21,29 @@ DATA_DIR = base_dir / "Datasets" / "Slab2" / "Slab2_TXT"
 ALL_SLABS = {
     # "cal": "Calabria",
     "cam": "Central_America",
-    "cot": "Cotabato",
+    # "cot": "Cotabato",
     # "hin": "Hindu_Kush",
-    "man": "Manila",
-    "sco": "Scotia",
-    "sul": "Sulawesi",
+    # "man": "Manila",
+    # "sco": "Scotia",
+    # "sul": "Sulawesi",
     "sam": "South_America",
     "cas": "Cascadia",
     # "him": "Himalaya",
-    "puy": "Puysegur",
+    # "puy": "Puysegur",
     # "mak": "Makran",
-    "hal": "Halmahera",
+    # "hal": "Halmahera",
     "kur": "Kuril",
-    "mue": "Muertos",
+    # "mue": "Muertos",
     "alu": "Aleutian",
     "ryu": "Ryukyu",
-    "phi": "Philippines",
+    # "phi": "Philippines",
     "ker": "Kermadec",
-    "van": "Vanuatu",
-    "png": "New_Guinea",
-    "car": "Caribbean",
-    "hel": "Hellenic",
-    "pam": "Pamir",
-    "sol": "Solomon",
+    # "van": "Vanuatu",
+    # "png": "New_Guinea",
+    # "car": "Caribbean",
+    # "hel": "Hellenic",
+    # "pam": "Pamir",
+    # "sol": "Solomon",
     "sum": "Sumatra",
     "izu": "Izu_Bonin",
 }
@@ -311,8 +311,8 @@ class Slab:
 
         # Compute alpha shape (alpha ≈ resolution works well for structured grids)
         alpha = 15
-        if self.name == 'mue':
-            alpha = 5
+        if self.name == 'sum':
+            print('Sumatra alpha shape does not work. Passing')
         # elif
         print(f'res: {dlat}, alpha: {alpha}')
         hull = alphashape.alphashape(np.array(points), alpha=alpha)
@@ -320,24 +320,27 @@ class Slab:
         if isinstance(hull, (Polygon, MultiPolygon)):
             geom = hull
         elif hasattr(hull, "geoms"):
+            print('Multiple polygons being created')
             polys = [g for g in hull.geoms if isinstance(g, (Polygon, MultiPolygon))]
             geom = MultiPolygon(polys) if len(polys) > 1 else polys[0]
         else:
             raise ValueError("Resulting alpha shape is not a polygonal geometry.")
+        # return geom
+
         # Create GeoDataFrame
         gdf = gpd.GeoDataFrame(geometry=[geom], crs="EPSG:4326")
 
         # Export to shapefile
         gdf.to_file(path)
+        return geom
+
 
 for slab_name in list(ALL_SLABS.keys()):
     print(f'Processing {ALL_SLABS[slab_name]}')
-    # if slab_name != 'ryu':
-    #     continue
     slab = Slab(slab_name, path='../data/Slab2/xyz')
-    # slab.write_csv(f'../data/Slab2/csv/{slab_name}_slab2.csv')
+    slab.write_csv(f'../data/Slab2/csv/{slab_name}_slab2_-180_180.csv')
     # slab.write_geotiff(f'../data/Slab2/geotiff/{slab_name}_depth.tif', attr='depth', corr360=True)
-    slab.write_shp(f'../data/Slab2/shp/{slab_name}.shp', corr360=True)
+    # a = slab.write_shp(f'../data/Slab2/shp/{slab_name}.shp', corr360=True)
 
 # def write_singleband_tiff(path, array, transform, dtype):
 #     array = array[::-1, :]  # Flip for north-up
