@@ -8,3 +8,7 @@ dependencies:
   - matplotlib
   - scipy
   - pyvista
+  - rasterio
+  - scikit-learn
+  - utm
+  - pyproj
