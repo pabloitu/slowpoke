@@ -19,18 +19,18 @@ base_dir = Path(__file__).parents[2]
 DATA_DIR = base_dir / "Datasets" / "Slab2" / "Slab2_TXT"
 
 ALL_SLABS = {
-    "cal": "Calabria",
+    # "cal": "Calabria",
     "cam": "Central_America",
     "cot": "Cotabato",
-    "hin": "Hindu_Kush",
+    # "hin": "Hindu_Kush",
     "man": "Manila",
     "sco": "Scotia",
     "sul": "Sulawesi",
     "sam": "South_America",
     "cas": "Cascadia",
-    "him": "Himalaya",
+    # "him": "Himalaya",
     "puy": "Puysegur",
-    "mak": "Makran",
+    # "mak": "Makran",
     "hal": "Halmahera",
     "kur": "Kuril",
     "mue": "Muertos",
@@ -310,14 +310,16 @@ class Slab:
         points = [(lon, lat) for lon, lat in zip(longitudes[self.indices], latitudes[self.indices])]
 
         # Compute alpha shape (alpha ≈ resolution works well for structured grids)
-        alpha = dlat * 250
+        alpha = 15
+        if self.name == 'mue':
+            alpha = 5
+        # elif
         print(f'res: {dlat}, alpha: {alpha}')
         hull = alphashape.alphashape(np.array(points), alpha=alpha)
         # Force the geometry to be a MultiPolygon if needed
         if isinstance(hull, (Polygon, MultiPolygon)):
             geom = hull
         elif hasattr(hull, "geoms"):
-            print(hull)
             polys = [g for g in hull.geoms if isinstance(g, (Polygon, MultiPolygon))]
             geom = MultiPolygon(polys) if len(polys) > 1 else polys[0]
         else:
@@ -328,13 +330,12 @@ class Slab:
         # Export to shapefile
         gdf.to_file(path)
 
-
-for slab_name in ALL_SLABS:
-    print(slab_name)
-    if slab_name != 'ker':
-        continue
+for slab_name in list(ALL_SLABS.keys()):
+    print(f'Processing {ALL_SLABS[slab_name]}')
+    # if slab_name != 'ryu':
+    #     continue
     slab = Slab(slab_name, path='../data/Slab2/xyz')
-    slab.write_csv(f'../data/Slab2/csv/{slab_name}_slab2.csv')
+    # slab.write_csv(f'../data/Slab2/csv/{slab_name}_slab2.csv')
     # slab.write_geotiff(f'../data/Slab2/geotiff/{slab_name}_depth.tif', attr='depth', corr360=True)
     slab.write_shp(f'../data/Slab2/shp/{slab_name}.shp', corr360=True)
 
