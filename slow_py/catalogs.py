@@ -350,6 +350,7 @@ def get_alaska_catalog(depth=None, savepath=None):
         new_catalog.write_ascii(savepath)
     return new_catalog
 
+
 def get_alaska_raw_catalog(depth=None, savepath=None):
 
 
