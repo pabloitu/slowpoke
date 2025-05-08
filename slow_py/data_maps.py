@@ -6,30 +6,31 @@ from catalogs import *
 from slab import Slab, ALL_SLABS
 
 regions = [
-    # 'mexico',
-           'japan']
+    'mexico',
+    # 'japan',
+]
 slabs_per_region = {
-    # 'mexico': [Slab('cam',  path='../data/Slab2/xyz')],
+    'mexico': [Slab('cam',  path='../data/Slab2/xyz')],
     'japan': [Slab('ryu',  path='../data/Slab2/xyz'),
               Slab('izu',  path='../data/Slab2/xyz'),
               Slab('kur',  path='../data/Slab2/xyz')]
 }
 slabpoly_per_region = {
-#     'mexico': '../data/poly4seismicity/FinalPolygons_150km/mexico.shp',
+    'mexico': '../data/poly4seismicity/FinalPolygons_150km/mexico.shp',
   'japan': '../data/poly4seismicity/FinalPolygons_150km/japan.shp'
 }
 catalogs = {
-    # 'mexico': [get_mexico_raw_catalog(), get_mexico_catalog(depth=150)],
+    'mexico': [get_mexico_raw_catalog(), get_mexico_catalog(depth=150)],
     'japan': [get_japan_catalog(depth=150)]}
 
 filename = {
-    # 'mexico': 'mexico.png',
-            'japan': 'japan.png'}
+    'mexico': '../images/mexico_map.png',
+            'japan': '../images/japan_map.png'}
 extents = {
     'mexico': [-108.984, -92.434, 11, 23.021],
-           'japan': [121, 148, 23, 50]}  #121.2500000000000000,23.3999999999999986 : 148.1500000000000057,50.5499999999999972
+           'japan': [121, 150, 23, 47]}  #121.2500000000000000,23.3999999999999986 : 148.1500000000000057,50.5499999999999972
 fig_sizes = {
-    # 'mexico': (10, 8),
+    'mexico': (10, 8),
              'japan': (8, 10)}
 
 
@@ -54,7 +55,8 @@ for region in regions:
         midpoints = np.column_stack((i.longitude[i.indices], i.latitude[i.indices]))
         csep_region = csep.core.regions.CartesianGrid2D.from_origins(midpoints)
         data = i.depth[i.indices] / 1000.
-        ax = csep.utils.plots.plot_gridded_dataset(csep_region.get_cartesian(data), csep_region, ax=ax,
+        plot_cbar = True if i == slabs[-1] else False
+        ax = csep.utils.plots.plot_gridded_dataset(csep_region.get_cartesian(data), csep_region, ax=ax, colorbar=plot_cbar,
                                                    colormap='magma', alpha=0.5, clim=[None, 300], clabel='Depth [km]')
 
     ### Slab poly

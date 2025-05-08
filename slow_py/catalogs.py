@@ -234,6 +234,7 @@ def get_cascadia_catalog(depth=None, savepath=None):
         new_catalog.write_ascii(savepath)
     return new_catalog
 
+
 def get_alaska_catalog(depth=None, savepath=None):
 
     if depth == '70km' or depth == 70:
@@ -272,6 +273,7 @@ def get_alaska_catalog(depth=None, savepath=None):
         events.append((i, dt, lat, lon, depth, mag))
 
     new_catalog = csep.core.catalogs.CSEPCatalog(data=events)
+    new_catalog.filter('depth <= 170', in_place=True)
     if savepath:
         new_catalog.write_ascii(savepath)
     return new_catalog
@@ -296,28 +298,28 @@ def get_slow_slip_catalog():
     return new_catalog
 
 FUNC_MAP = {
-    # 'chile': get_chile_catalog,
-    # 'mexico': get_mexico_catalog,
-    # 'japan': get_japan_catalog,
-    # 'japan_filtered': get_japan_filtered_catalog,
-    'cascadia': get_cascadia_catalog
+    'chile': get_chile_catalog,
+    'mexico': get_mexico_catalog,
+    'japan': get_japan_catalog,
+    'japan_filtered': get_japan_filtered_catalog,
+    'cascadia': get_cascadia_catalog,
+    'alaska': get_alaska_catalog,
 
 }
 
 if __name__ == '__main__':
-    # savedir = os.path.join(basepath, '../data/FastEarthquakes')
-    # plot = True
-    # for cat_name in FUNC_MAP.keys():
-    #     for depth in ['70km', '150km', 'full']:
-    #         print(cat_name, depth)
-    #         savepath = os.path.join(savedir, f'depth_{depth}', f'{cat_name}.csv')
-    #         catalog = FUNC_MAP[cat_name](depth=depth, savepath=savepath)
-    #         if plot:
-    #             figpath = os.path.join(savedir, f'depth_{depth}', f'{cat_name}.png')
-    #             catalog.plot()
-    #             plt.savefig(figpath, dpi=200)
+    savedir = os.path.join(basepath, '../data/FastEarthquakes')
+    plot = True
+    for cat_name in FUNC_MAP.keys():
+        for depth in ['70km', '150km', 'full']:
+            savepath = os.path.join(savedir, f'depth_{depth}', f'{cat_name}.csv')
+            catalog = FUNC_MAP[cat_name](depth=depth, savepath=savepath)
+            if plot:
+                figpath = os.path.join(savedir, f'depth_{depth}', f'{cat_name}.png')
+                catalog.plot()
+                plt.savefig(figpath, dpi=200)
 
-    a = get_slow_slip_catalog()
+    # a = get_slow_slip_catalog()
 
 
 
