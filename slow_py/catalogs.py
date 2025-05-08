@@ -42,6 +42,17 @@ def get_chile_catalog(depth=None, savepath=None):
     return new_catalog
 
 
+def get_chile_raw_catalog(depth=None, savepath=None):
+
+    cat_fname =  os.path.join(basepath,'../data/fast_catalogue_CH_alldepths')
+
+    catalog = csep.load_catalog(cat_fname)
+
+    catalog.filter('depth <= 180', in_place=True)
+
+    return catalog
+
+
 def get_mexico_raw_catalog(depth=None, savepath=None):
 
     if depth == '70km' or depth == 70:
@@ -149,6 +160,37 @@ def get_japan_catalog(depth=None, savepath=None):
     return new_catalog
 
 
+def get_japan_raw_catalog(depth=None, savepath=None):
+
+
+    cat_fname = '../data/Japan_EQ_all.csv'
+    catalog = pandas.read_csv(cat_fname)
+
+    # catalog = csep.load_catalog(cat_fname)
+
+    point_geometries = [Point(lon, lat) for lon, lat in zip(catalog.longitude,
+                                                            catalog.latitude)]
+
+
+    new_catalog = catalog
+
+    lons = new_catalog.longitude
+    lats = new_catalog.latitude
+    # csep.utils.time_utils.strptime_to_utc_epoch(catalog.datetime_utc[0])
+    epoch_times = [csep.utils.time_utils.strptime_to_utc_epoch(i) for i in new_catalog.datetime_utc]
+    depth = new_catalog.depth_km
+    magnitude = new_catalog.magnitude
+
+    events = []
+    for i, (lon, lat, dt, depth, mag) in enumerate(zip(lons, lats, epoch_times, depth, magnitude)):
+        events.append((i, dt, lat, lon, depth, mag))
+
+    new_catalog = csep.core.catalogs.CSEPCatalog(data=events)
+    new_catalog.filter('depth <= 180', in_place=True)
+
+    return new_catalog
+
+
 def get_japan_filtered_catalog(depth=None, savepath=None):
 
     if depth == '70km' or depth == 70:
@@ -235,6 +277,36 @@ def get_cascadia_catalog(depth=None, savepath=None):
     return new_catalog
 
 
+def get_cascadia_raw_catalog(depth=None, savepath=None):
+
+
+    cat_fname = '../data/Cascadia_EQ_all.csv'
+    catalog = pandas.read_csv(cat_fname)
+
+    # catalog = csep.load_catalog(cat_fname)
+
+    point_geometries = [Point(lon, lat) for lon, lat in zip(catalog.longitude,
+                                                            catalog.latitude)]
+
+
+    new_catalog = catalog
+
+    lons = new_catalog.longitude
+    lats = new_catalog.latitude
+    # csep.utils.time_utils.strptime_to_utc_epoch(catalog.datetime_utc[0])
+    epoch_times = [csep.utils.time_utils.strptime_to_utc_epoch(i.replace('T', ' ').replace('Z', '')) for i in new_catalog.time]
+    depth = new_catalog.depth
+    magnitude = new_catalog.mag
+
+    events = []
+    for i, (lon, lat, dt, depth, mag) in enumerate(zip(lons, lats, epoch_times, depth, magnitude)):
+        events.append((i, dt, lat, lon, depth, mag))
+
+    new_catalog = csep.core.catalogs.CSEPCatalog(data=events)
+
+    return new_catalog
+
+
 def get_alaska_catalog(depth=None, savepath=None):
 
     if depth == '70km' or depth == 70:
@@ -278,6 +350,36 @@ def get_alaska_catalog(depth=None, savepath=None):
         new_catalog.write_ascii(savepath)
     return new_catalog
 
+def get_alaska_raw_catalog(depth=None, savepath=None):
+
+
+    cat_fname = '../data/Alaska_EQ_all.csv'
+    catalog = pandas.read_csv(cat_fname)
+
+    # catalog = csep.load_catalog(cat_fname)
+
+    point_geometries = [Point(lon, lat) for lon, lat in zip(catalog.longitude,
+                                                            catalog.latitude)]
+
+
+    new_catalog = catalog
+
+    lons = new_catalog.longitude
+    lats = new_catalog.latitude
+    # csep.utils.time_utils.strptime_to_utc_epoch(catalog.datetime_utc[0])
+    epoch_times = [csep.utils.time_utils.strptime_to_utc_epoch(i.replace('T', ' ').replace('Z', '')) for i in new_catalog.time]
+    depth = new_catalog.depth
+    magnitude = new_catalog.mag
+
+    events = []
+    for i, (lon, lat, dt, depth, mag) in enumerate(zip(lons, lats, epoch_times, depth, magnitude)):
+        events.append((i, dt, lat, lon, depth, mag))
+
+    new_catalog = csep.core.catalogs.CSEPCatalog(data=events)
+    new_catalog.filter('depth <= 170', in_place=True)
+    if savepath:
+        new_catalog.write_ascii(savepath)
+    return new_catalog
 
 
 def get_slow_slip_catalog():
@@ -319,7 +421,7 @@ if __name__ == '__main__':
                 catalog.plot()
                 plt.savefig(figpath, dpi=200)
 
-    # a = get_slow_slip_catalog()
+    a = get_slow_slip_catalog()
 
 
 
