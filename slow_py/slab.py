@@ -293,7 +293,7 @@ class Slab:
         #
         # lon_min, lon_max, lat_min, lat_max, res = parse_gmt_history(ds.attrs["history"])
 
-    def write_shp(self, path, corr360=False):
+    def write_shp(self, path, max_depth: float =None, corr360=False):
         if corr360:
             longitudes = self.raw_xyz[:, 0]
             latitudes = self.raw_xyz[:, 1]
@@ -306,8 +306,12 @@ class Slab:
         dlon = np.diff(np.unique(longitudes))[0]
         dlat = np.diff(np.unique(latitudes))[0]
 
+        if max_depth is None:
+            indices = self.indices
+        else:
+            indices = np.where(self.depth < max_depth)
         # Build point set
-        points = [(lon, lat) for lon, lat in zip(longitudes[self.indices], latitudes[self.indices])]
+        points = [(lon, lat) for lon, lat in zip(longitudes[indices], latitudes[indices])]
 
         # Compute alpha shape (alpha ≈ resolution works well for structured grids)
         alpha = 15
@@ -333,147 +337,76 @@ class Slab:
         # Export to shapefile
         gdf.to_file(path)
         return geom
+    #
+    # def write_vtk(self, path, attrs=['depth'], depth_scale=1.0, center_longitudes=False):
+    #     """
+    #     Write the slab data as a VTK structured grid.
+    #
+    #     Args:
+    #         path (str or Path): Output .vtk file path.
+    #         attrs (list): List of attribute names to include (e.g., ['depth', 'dip']).
+    #         depth_scale (float): Scale factor to apply to depth values (e.g., 0.001 for km).
+    #         center_longitudes (bool): If True, shift longitudes < 0 by +360.
+    #     """
+    #
+    #     if center_longitudes:
+    #         longitudes = self.raw_xyz[:, 0]
+    #         longitudes = np.where(longitudes < 0, longitudes + 360, longitudes)
+    #     else:
+    #         longitudes = self.longitude
+    #
+    #     latitudes = self.latitude
+    #
+    #     # Resolution and grid dimensions
+    #     lon_min = np.min(longitudes)
+    #     lon_max = np.max(longitudes)
+    #     lat_min = np.min(latitudes)
+    #     lat_max = np.max(latitudes)
+    #     dx = np.diff(np.unique(longitudes))[0]
+    #     dy = np.diff(np.unique(latitudes))[0]
+    #
+    #     nx = int(np.round((lon_max - lon_min) / dx, 0)) + 1
+    #     ny = int(np.round((lat_max - lat_min) / dy, 0)) + 1
+    #
+    #     x = np.linspace(lon_min, lon_max, nx)
+    #     y = np.linspace(lat_min, lat_max, ny)
+    #     xx, yy = np.meshgrid(x, y, indexing='xy')
+    #
+    #     if center_longitudes:
+    #         xx = np.where(xx < 0, xx + 360, xx)
+    #         sort_idx = np.argsort(xx[0, :])
+    #         xx = xx[:, sort_idx]
+    #         yy = yy[:, sort_idx]
+    #
+    #     # Create VTK grid
+    #     zz = self.depth.reshape(ny, nx) * depth_scale
+    #     if center_longitudes:
+    #         zz = zz[:, sort_idx]
+    #     points = np.c_[xx.ravel(), yy.ravel(), zz.ravel()]
+    #     grid = pv.StructuredGrid()
+    #     grid.points = points
+    #     grid.dimensions = [nx, ny, 1]
+    #
+    #     for attr in attrs:
+    #         arr = getattr(self, attr).reshape(ny, nx)
+    #         if center_longitudes:
+    #             arr = arr[:, sort_idx]
+    #         grid[attr] = arr.ravel(order="C")
+    #
+    #     grid.save(path)
+    #
 
 
-for slab_name in list(ALL_SLABS.keys()):
-    print(f'Processing {ALL_SLABS[slab_name]}')
-    slab = Slab(slab_name, path='../data/Slab2/xyz')
-    slab.write_csv(f'../data/Slab2/csv/{slab_name}_slab2_-180_180.csv')
-    # slab.write_geotiff(f'../data/Slab2/geotiff/{slab_name}_depth.tif', attr='depth', corr360=True)
-    # a = slab.write_shp(f'../data/Slab2/shp/{slab_name}.shp', corr360=True)
+if __name__ == "__main__":
+    for slab_name in list(ALL_SLABS.keys()):
+        print(f'Processing {ALL_SLABS[slab_name]}')
 
-# def write_singleband_tiff(path, array, transform, dtype):
-#     array = array[::-1, :]  # Flip for north-up
-#     with rasterio.open(
-#         path, "w",
-#         driver="GTiff",
-#         height=array.shape[0],
-#         width=array.shape[1],
-#         count=1,
-#         dtype=dtype,
-#         crs="EPSG:4326",
-#         transform=transform
-#     ) as dst:
-#         dst.write(array, 1)
-#
-#
-# def write_csv(path, x, y, data):
-#     xx, yy = np.meshgrid(x, y)
-#     df = pd.DataFrame({"lon": xx.ravel(), "lat": yy.ravel()})
-#     for key, arr in data.items():
-#         df[key] = arr.ravel()
-#     df.dropna(inplace=True)
-#     df.to_csv(path, index=False)
-#
-#
-# def write_vtk(path, x, y, data_dict, depth_scale=1.0, center_longitudes=False):
-#     if "depth" not in data_dict:
-#         raise ValueError("VTK export requires 'depth' in data_dict")
-#
-#     depth = data_dict["depth"]
-#     ny, nx = depth.shape
-#
-#     xx, yy = np.meshgrid(x, y, indexing="xy")  # shape (ny, nx)
-#
-#     if center_longitudes:
-#         xx = np.where(xx < 0, xx + 360, xx)
-#
-#         sort_idx = np.argsort(xx[0, :])
-#         xx = xx[:, sort_idx]
-#         yy = yy[:, sort_idx]
-#         for key in data_dict:
-#             data_dict[key] = data_dict[key][:, sort_idx]
-#
-#     zz = data_dict["depth"] * depth_scale
-#     points = np.c_[xx.ravel(), yy.ravel(), zz.ravel()]
-#
-#     grid = pv.StructuredGrid()
-#     grid.points = points
-#     grid.dimensions = [nx, ny, 1]
-#
-#     for name, arr in data_dict.items():
-#         grid[name] = arr.ravel(order="C")
-#
-#     grid.save(path)
-#
-#
-# def process_subduction(prefix, input_dir, output_dir):
-#     print(f"Processing {prefix}...")
-#
-#     os.makedirs(f"{output_dir}/tiff", exist_ok=True)
-#     os.makedirs(f"{output_dir}/csv", exist_ok=True)
-#     os.makedirs(f"{output_dir}/vtk", exist_ok=True)
-#
-#     data = {}
-#     shape = None
-#     lon_min = lon_max = lat_min = lat_max = res = None
-#
-#     for suffix, varname in FILENAME_MAP.items():
-#         file_path = os.path.join(input_dir, f"{prefix}_{suffix}")
-#         if not os.path.exists(file_path):
-#             continue
-#         ds = xr.open_dataset(file_path)
-#         z = ds["z"].values
-#         data[varname] = z
-#         if shape is None:
-#             shape = z.shape
-#             lon_min, lon_max, lat_min, lat_max, res = parse_gmt_history(ds.attrs["history"])
-#
-#     if not data:
-#         print(f"No matching .grd files for {prefix}")
-#         return
-#
-#     ny, nx = shape
-#     # --- Handle longitude wrapping ---
-#     if lon_min < 0: lon_min += 360
-#     if lon_max < 0: lon_max += 360
-#     if lon_max < lon_min:
-#         lon_max += 360  # ensure wraparound is properly handled
-#
-#     x = np.linspace(lon_min, lon_max, nx)
-#     y = np.linspace(lat_min, lat_max, ny)
-#
-#     # --- Adjust for Pacific-centered longitudes in raster and CSV ---
-#     if lon_min < 0:
-#         x = np.where(x < 0, x + 360, x)
-#         sort_idx = np.argsort(x)
-#         x = x[sort_idx]
-#
-#         for key in data:
-#             data[key] = data[key][:, sort_idx]
-#
-#         lon_min = x[0]  # Update transform origin
-#
-#     transform = from_origin(lon_min, lat_max, res, res)
-#
-#     # Write TIFFs
-#     for key, arr in data.items():
-#         tif_path = f"{output_dir}/tiff/{prefix}_{key}.tif"
-#         write_singleband_tiff(tif_path, arr, transform, arr.dtype)
-#
-#     # Write CSV
-#     csv_path = f"{output_dir}/csv/{prefix}.csv"
-#     write_csv(csv_path, x, y, data)
-#
-#     # Write VTK
-#     vtk_path = f"{output_dir}/vtk/{prefix}.vtk"
-#     write_vtk(
-#         vtk_path,
-#         x,
-#         y,
-#         data,
-#         depth_scale=0.01,
-#         center_longitudes=True
-#     )
-#
-#
-# # --- Run all prefixes ---
-# input_dir = "../slab2_data/raw"
-# output_dir = "../slab2_data/processed"
-# prefixes = [
-#     "cam_slab2_surf", "sam_slab2_center", "kur_slab2_surf",
-#     "izu_slab2_surf", "cas_slab2_surf", "alu_slab2_surf"
-# ]
-#
-# for prefix in prefixes:
-#     process_subduction(prefix, input_dir, output_dir)
+        slab = Slab(slab_name, path='../data/Slab2/xyz')
+        # slab.write_csv(f'../data/Slab2/csv/{slab_name}_slab2_-180_180.csv')
+        # slab.write_geotiff(f'../data/Slab2/geotiff/{slab_name}_depth.tif', attr='depth', corr360=True)
+        # slab.write_shp(f'../data/Slab2/shp_0_360/{slab_name}.shp', corr360=True)
+        # slab.write_shp(f'../data/Slab2/shp_-180_180/{slab_name}.shp', corr360=False)
+        # slab.write_shp(f'../data/poly4seismicity/slab2depth70/{slab_name}.shp', max_depth=70000, corr360=False)
+        slab.write_shp(f'../data/poly4seismicity/slab2depth100/{slab_name}.shp', max_depth=100000, corr360=False)
+
+        # slab.write_shp(f'../data/poly4seismicity/slab2depth150/{slab_name}.shp', max_depth=150000, corr360=False)
