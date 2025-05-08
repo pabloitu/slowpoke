@@ -400,6 +400,29 @@ def get_slow_slip_catalog():
     new_catalog = csep.core.catalogs.CSEPCatalog(data=events)
     return new_catalog
 
+
+def get_slow_slip_catalog_region(region):
+    if region == 'alaska':
+        sub_name = 'alu'
+    elif region == 'cascadia':
+        sub_name = 'cas'
+    else:
+        sub_name = region
+    shp_fname = f'../data/poly4seismicity/FinalPolygons_150km/{sub_name}.shp'
+    region = gpd.read_file(shp_fname)
+
+    cat_fname = '../data/SSE_full_cat_pref_largest.csv'
+    db = pandas.read_csv(cat_fname, index_col=0)
+
+    point_geometries = [Point(lon, lat) for lon, lat in zip(db.lon,
+                                                            db.lat)]
+    points_gdf = gpd.GeoDataFrame(geometry=point_geometries, crs="EPSG:4326")
+    within_mask = points_gdf.within(region.union_all())
+    new_db = db.iloc[within_mask.values]
+
+
+    return new_db
+
 FUNC_MAP = {
     'chile': get_chile_catalog,
     'mexico': get_mexico_catalog,
